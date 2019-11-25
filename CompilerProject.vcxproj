@@ -139,8 +139,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="..\..\exercise1\.gitignore" />
-    <None Include="..\..\exercise1\compile.sh" />
     <Flex Include="main.lex">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Compile|Win32'">win_flex.exe  --outfile="lex.yy.c" --wincompat %(Identity)</Command>
@@ -161,6 +159,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="information.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2030,7 +2030,7 @@ int main(int argc, char **argv )
 
 	if(yyin==0)
 	{
-		fprintf(yyout,"Can't open file!");
+		fprintf(yyout,"Unable to open the file!");
 	}
 
     yylex();
@@ -2045,7 +2045,7 @@ int main(int argc, char **argv )
 
 	if (yyin == 0)
 	{
-		fprintf(yyout, "Can't open file!");
+		fprintf(yyout,"Unable to open the file!");
 	}
 
 	yyrestart(yyin);

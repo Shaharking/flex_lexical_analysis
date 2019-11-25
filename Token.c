@@ -104,7 +104,7 @@ Token *back_token()
 
 	if (currentIndex == 0)
 	{
-		currentIndex = 99;
+		currentIndex = TOKEN_ARRAY_SIZE - 1;
 		currentNode = currentNode->prev;
 		return back_token();
 	}

@@ -15,10 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\exercise1\.gitignore" />
-    <None Include="..\..\exercise1\compile.sh" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Token.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,5 +36,8 @@
     <Flex Include="main.lex">
       <Filter>Resource Files</Filter>
     </Flex>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
   </ItemGroup>
 </Project>
