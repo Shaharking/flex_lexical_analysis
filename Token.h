@@ -16,7 +16,7 @@ typedef int bool;
 typedef enum eTOKENS
 {
 	/*Basic types**/
-	TOKEN_INTEGER,
+	TOKEN_INTEGER = 0,
 	TOKEN_REAL,
 	/*Opeartions*/
 	TOKEN_OPERATION_ADDITION,
@@ -47,7 +47,7 @@ typedef enum eTOKENS
 	TOKEN_KEYWORD_BREAK,
 	TOKEN_KEYWORD_CASE,
 	/* Speartion */
-	TOKEN_SEPARATION_COLON, 	/* : */
+	TOKEN_SEPARATION_COLON,
 	TOKEN_SEPARATION_COMMA,
 	TOKEN_SEPARATION_SEMICOLON,
 	TOKEN_SEPARATION_PARENTHESES_OPEN,
@@ -91,5 +91,6 @@ void _set_token_pointer_head_warning_from_parse_program_only_();
 Token* current_token();
 
 void parserErrorHandler(Token* current_token, eTOKENS* follow, int followSize);
+char* getTokenName(eTOKENS token);
 
 #endif
