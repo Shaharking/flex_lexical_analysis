@@ -152,9 +152,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.flex.c" />
+    <ClCompile Include="Parser.c" />
     <ClCompile Include="Token.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Parser.h" />
     <ClInclude Include="Token.h" />
   </ItemGroup>
   <ItemGroup>

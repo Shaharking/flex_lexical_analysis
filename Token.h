@@ -9,6 +9,10 @@
 
 extern FILE *yyin, *yyout;
 
+typedef int bool;
+#define TRUE  1
+#define FALSE 0
+
 typedef enum eTOKENS
 {
 	/*Basic types**/
@@ -24,7 +28,7 @@ typedef enum eTOKENS
 	/* Field Access */
 	TOKEN_FIELD_ACCESS,
 	/*id and type_name*/
-	TOEKN_IDENTIFIER,
+	TOKEN_IDENTIFIER,
 	TOKEN_TYPE,
 	/*Keywords*/
 	TOKEN_KEYWORD_BLOCK,
@@ -43,7 +47,7 @@ typedef enum eTOKENS
 	TOKEN_KEYWORD_BREAK,
 	TOKEN_KEYWORD_CASE,
 	/* Speartion */
-	TOKEN_SEPARATION_COLON,
+	TOKEN_SEPARATION_COLON, 	/* : */
 	TOKEN_SEPARATION_COMMA,
 	TOKEN_SEPARATION_SEMICOLON,
 	TOKEN_SEPARATION_PARENTHESES_OPEN,
@@ -51,7 +55,9 @@ typedef enum eTOKENS
 	TOKEN_SEPARATION_BRACKETS_OPEN,
 	TOKEN_SEPARATION_BRACKETS_CLOSE,
 	TOKEN_SEPARATION_CURLY_BRACES_OPEN,
-	TOKEN_SEPARATION_CURLY_BRACES_CLOSE
+	TOKEN_SEPARATION_CURLY_BRACES_CLOSE,
+
+	TOKEN_END_OF_FILE
 	/*
 		Examples of tokens, add/change according to your needs.
 		
@@ -76,8 +82,14 @@ typedef struct Node
 	struct Node *next;
 } Node;
 
+void reset_store_token();
 void create_and_store_token(eTOKENS kind, char* lexeme, int numOfLine);
 Token *next_token();
 Token *back_token();
+void set_token_pointer_to_head_of_list();
+void _set_token_pointer_head_warning_from_parse_program_only_();
+Token* current_token();
+
+void parserErrorHandler(Token* current_token, eTOKENS* follow, int followSize);
 
 #endif

@@ -92,6 +92,24 @@ void create_and_store_token(eTOKENS kind, char* lexeme, int numOfLine)
 
 }
 
+/* reset store token */
+void reset_store_token()
+{
+	Node* node = tail;
+	Node* next_node;
+	while (node != NULL)
+	{
+		next_node = node->prev;
+		free(node->tokensArray);
+		free(node);
+		node = next_node;
+	}
+	currentNode = NULL;
+	head = NULL;
+	tail = NULL;
+	currentIndex = 0;
+}
+
 /*
 * This function returns the token in the storage that is stored immediately before the current token (if exsits).
 */
@@ -104,7 +122,7 @@ Token *back_token()
 
 	if (currentIndex == 0)
 	{
-		currentIndex = TOKEN_ARRAY_SIZE - 1;
+		currentIndex = TOKEN_ARRAY_SIZE;
 		currentNode = currentNode->prev;
 		return back_token();
 	}
@@ -137,5 +155,81 @@ Token *next_token()
 	{
 		currentIndex = currentIndex + 1;
 		return &(currentNode->tokensArray[currentIndex]);
+	}
+}
+
+void set_token_pointer_to_head_of_list()
+{
+	currentNode = head;
+	currentIndex = 0;
+}
+
+void _set_token_pointer_head_warning_from_parse_program_only_()
+{
+	// You can never get to the tokens[0] of the head....
+	// So you call this "weird" function from the parse program before you call 'Parse_BLOCK', So you can get the "block" from next_token only.
+	currentIndex = -1;
+}
+
+Token* current_token()
+{
+	if (!currentNode)
+	{
+		return NULL;
+	}
+	return &(currentNode->tokensArray[currentIndex]);
+}
+
+void parserErrorHandler(Token* current_token, eTOKENS* follow, int followSize)
+{
+	Token* current_token_saver = current_token;
+	Token* token = current_token;
+	int loop = 0;
+	bool hasError = TRUE;
+	bool isPartOfFollow = TRUE;
+
+	while (token && hasError)
+	{
+		for (loop = 0; loop < followSize; loop++)
+		{
+			if (token->kind == follow[loop])
+			{
+				hasError = FALSE;
+				break;
+			}
+		}
+
+		if (hasError == FALSE)
+		{
+			break;
+		}
+
+		isPartOfFollow = FALSE;
+		token = next_token();
+	}
+	if (token && isPartOfFollow == FALSE)
+	{
+		// it's not part of the follow group -> so there is syntax error
+		/**Expected token of type '{expectedToken.type}' at line : {token.line},
+			Actual token of type '{token.type}', lexeme : '{token.lexeme}**/
+		fprintf(yyout, "Expected token of type ");
+		for (loop = 0; loop < followSize; loop++)
+		{
+			fprintf(yyout, "%d", follow[loop]);
+			if (loop != followSize - 1)
+			{
+				fprintf(yyout, ",");
+			}
+		}
+		fprintf(yyout, " at line : %d, Actual token of type %d, lexeme : %s . \n", current_token_saver->lineNumber, current_token_saver->kind, current_token_saver->lexeme);
+	}
+
+	if (hasError == FALSE)
+	{
+		token = back_token();
+	}
+	else
+	{
+		return 1;
 	}
 }
