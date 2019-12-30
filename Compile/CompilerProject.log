@@ -1,5 +1,19 @@
 ﻿  Process "main.lex" flex file
   main.flex.c
+  Parser.c
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(5,1): warning C4029: declared formal parameter list different from definition
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(116,18): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(369,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(441,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(521,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(617,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(642,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(691,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(741,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(882,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(942,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
   Token.c
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1013,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
   Generating Code...
+Z:\Development\Compilation\CompilerProject\CompilerProject\Token.c(233,11): warning C4098: 'parserErrorHandler': 'void' function returning a value
   CompilerProject.vcxproj -> Z:\Development\Compilation\CompilerProject\Compile\CompilerProject.exe

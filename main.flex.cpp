@@ -1,6 +1,6 @@
-#line 1 "main.flex.c"
+#line 1 "main.flex.cpp"
 
-#line 3 "main.flex.c"
+#line 3 "main.flex.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -538,9 +538,9 @@ char *yytext;
 
 int line=1;
 
-#line 541 "main.flex.c"
+#line 541 "main.flex.cpp"
 /* Setting up all the regex token that we will need, in order to make more readable code */
-#line 543 "main.flex.c"
+#line 543 "main.flex.cpp"
 
 #define INITIAL 0
 
@@ -757,7 +757,7 @@ YY_DECL
 #line 49 "main.lex"
 
 
-#line 760 "main.flex.c"
+#line 760 "main.flex.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1014,7 +1014,7 @@ YY_RULE_SETUP
 #line 91 "main.lex"
 ECHO;
 	YY_BREAK
-#line 1017 "main.flex.c"
+#line 1017 "main.flex.cpp"
 
 	case YY_END_OF_BUFFER:
 		{

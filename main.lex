@@ -2,15 +2,13 @@
 
 %{
 #include "Token.h"
-/*
-create_and_store_token(TOKEN_KEYWORD_BLOCK, yytext, line);
-*/
+#include "Parser.h"
 
 int line=1;
 
 %}
 
-%s COMMENT
+/* Setting up all the regex token that we will need, in order to make more readable code */
 
 DIGIT       [0-9]
 ALPHA	    [a-zA-Z]
@@ -82,9 +80,10 @@ LINE [\n]
 {ASSIGNMENT}  { create_and_store_token(TOKEN_ASSIGNMENT, yytext, line);  }
 {ACCESS_FIELD_STRUCTURES}  { create_and_store_token(TOKEN_FIELD_ACCESS, yytext, line);  }
 _{IDENTIFIER}       { create_and_store_token(TOKEN_TYPE, yytext, line); } //type_name
-{IDENTIFIER}        { create_and_store_token(TOEKN_IDENTIFIER, yytext, line); } //Identifyer
+{IDENTIFIER}        { create_and_store_token(TOKEN_IDENTIFIER, yytext, line); } //Identifyer
 [1-9]({DIGIT})*\.({DIGIT})+              { create_and_store_token(TOKEN_REAL, yytext, line); }
 [1-9]({DIGIT})*                        { create_and_store_token(TOKEN_INTEGER, yytext, line);  }
+<<EOF>>	{return 1;}
 \n 			{line++;}
 [ \t]         {}
 .       	{fprintf(yyout ,"Character %s in line: %d does not begin any legal token in the language. \n", yytext, line );}
@@ -93,6 +92,7 @@ _{IDENTIFIER}       { create_and_store_token(TOKEN_TYPE, yytext, line); } //type
 
 int main(int argc, char **argv )
 {
+	/* Reading the first file */
     yyin=fopen("C:\\temp\\test1.txt","r");
 	yyout=fopen("C:\\temp\\test1_311402739_205669625_lex.txt","w");
 	//yyout = stdout;
@@ -102,13 +102,20 @@ int main(int argc, char **argv )
 		fprintf(yyout,"Unable to open the file!");
 	}
 
+	/*Process the file*/
     yylex();
 
-    fclose(yyin);
-    fclose(yyout);
+	fclose(yyout);
+	fclose(yyin);
+	yyout=fopen("C:\\temp\\test1_311402739_205669625_syntactic.txt","w");
+
+	Parser();
+
+	fclose(yyout);
 
 	line = 1;
 
+	/* Reading the second file */
 	yyin=fopen("C:\\temp\\test2.txt","r");
 	yyout=fopen("C:\\temp\\test2_311402739_205669625_lex.txt","w");
 
@@ -117,10 +124,18 @@ int main(int argc, char **argv )
 		fprintf(yyout,"Unable to open the file!");
 	}
 
+	reset_store_token();
 	yyrestart(yyin);
 
+	/*Process the file*/
 	yylex();
 
     fclose(yyin);
     fclose(yyout);
+
+    yyout=fopen("C:\\temp\\test2_311402739_205669625_syntactic.txt","w");
+
+	Parser();
+
+	fclose(yyout);
 }
