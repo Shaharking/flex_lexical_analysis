@@ -81,8 +81,8 @@ LINE [\n]
 {ACCESS_FIELD_STRUCTURES}  { create_and_store_token(TOKEN_FIELD_ACCESS, yytext, line);  }
 _{IDENTIFIER}       { create_and_store_token(TOKEN_TYPE, yytext, line); } //type_name
 {IDENTIFIER}        { create_and_store_token(TOKEN_IDENTIFIER, yytext, line); } //Identifyer
-[1-9]({DIGIT})*\.({DIGIT})+              { create_and_store_token(TOKEN_REAL, yytext, line); }
-[1-9]({DIGIT})*                        { create_and_store_token(TOKEN_INTEGER, yytext, line);  }
+({DIGIT})*\.({DIGIT})+              { create_and_store_token(TOKEN_REAL, yytext, line); }
+({DIGIT})*                        { create_and_store_token(TOKEN_INTEGER, yytext, line);  }
 <<EOF>>	{return 1;}
 \n 			{line++;}
 [ \t]         {}

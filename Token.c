@@ -17,6 +17,44 @@ Node* tail = NULL;
 
 #define TOKEN_ARRAY_SIZE 100
 
+const char* stringTokenNames[] = {
+	"INTEGER",
+	"REAL",
+	"OPERATION_ADDITION",
+	"OPERATION_SUBTRACTION",
+	"OPERATION_MULTIPLICATION",
+	"OPERATION_DIVISION",
+	"ASSIGNMENT",
+	"FIELD_ACCESS",
+	"IDENTIFIER",
+	"TYPE",
+	"KEYWORD_BLOCK",
+	"KEYWORD_BEGIN",
+	"KEYWORD_END",
+	"KEYWORD_ARRAY",
+	"KEYWORD_OF",
+	"KEYWORD_INTEGER",
+	"KEYWORD_REAL",
+	"KEYWORD_TYPE",
+	"KEYWORD_IS",
+	"KEYWORD_ENUM",
+	"KEYWORD_STRUCT",
+	"KEYWORD_SWITCH",
+	"KEYWORD_DEFAULT",
+	"KEYWORD_BREAK",
+	"KEYWORD_CASE",
+	"COLON",
+	"COMMA",
+	"SEMICOLON",
+	"PARENTHESES_OPEN",
+	"PARENTHESES_CLOSE",
+	"BRACKETS_OPEN",
+	"BRACKETS_CLOSE",
+	"CURLY_BRACES_OPEN",
+	"CURLY_BRACES_CLOSE",
+	"TOKEN_END_OF_FILE"
+};
+
 /*
 * This function creates a token and stores it in the storage.
 */
@@ -83,7 +121,7 @@ void create_and_store_token(eTOKENS kind, char* lexeme, int numOfLine)
 	currentNode->tokensArray[currentIndex].lineNumber = numOfLine;
 
 	currentNode->tokensArray[currentIndex].lexeme = (char*)malloc(sizeof(char)*length);
-	fprintf(yyout, "Token of type %d, lexeme: %s, found in line: %d\n", kind, lexeme, numOfLine);
+	fprintf(yyout, "Token of type %s, lexeme: %s, found in line: %d\n", getTokenName(kind), lexeme, numOfLine);
 	#ifdef _WIN32
 		strcpy_s(currentNode->tokensArray[currentIndex].lexeme, length, lexeme);
 	#else
@@ -215,13 +253,13 @@ void parserErrorHandler(Token* current_token, eTOKENS* follow, int followSize)
 		fprintf(yyout, "Expected token of type ");
 		for (loop = 0; loop < followSize; loop++)
 		{
-			fprintf(yyout, "%d", follow[loop]);
+			fprintf(yyout, "%s", getTokenName(follow[loop]));
 			if (loop != followSize - 1)
 			{
 				fprintf(yyout, ",");
 			}
 		}
-		fprintf(yyout, " at line : %d, Actual token of type %d, lexeme : %s . \n", current_token_saver->lineNumber, current_token_saver->kind, current_token_saver->lexeme);
+		fprintf(yyout, " at line : %d, Actual token of type %s, lexeme : %s . \n", current_token_saver->lineNumber, getTokenName(current_token_saver->kind), current_token_saver->lexeme);
 	}
 
 	if (hasError == FALSE)
@@ -232,4 +270,9 @@ void parserErrorHandler(Token* current_token, eTOKENS* follow, int followSize)
 	{
 		return 1;
 	}
+}
+
+char* getTokenName(eTOKENS token)
+{
+	return stringTokenNames[token];
 }
