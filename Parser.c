@@ -30,6 +30,11 @@ void Parse_PROGRAM()
 	Token* current_token = next_token();
 	current_token = back_token();
 
+	if (!current_token)
+	{
+		return;
+	}
+
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_BLOCK:
@@ -55,6 +60,11 @@ void Parse_BLOCK()
 
 	Token* current_token = next_token();
 	// BLOCK ->  block DECLARATIONS begin STATEMENTS end 
+	if (!current_token)
+	{
+		return;
+	}
+
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_BLOCK:
@@ -82,6 +92,10 @@ void Parse_DECLARATIONS()
 
 	Token* current_token = next_token();
 
+	if (!current_token)
+	{
+		return;
+	}
 	// DECLARATIONS ->  DECLARATION DECLARATIONS’ 
 	switch (current_token->kind)
 	{
@@ -109,6 +123,11 @@ void Parse_DECLARATIONS_()
 	follow[0] = TOKEN_KEYWORD_BEGIN;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
 	// DECLARATIONS’ -> ; DECLARATIONS | epsilon
 	switch (current_token->kind)
 	{
@@ -133,6 +152,10 @@ void Parse_DECLARATION()
 	follow[1] = TOKEN_KEYWORD_BEGIN;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { DECLARATION -> VAR_DECLARATION | TYPE_DECLARATION } \n");
 	switch (current_token->kind)
 	{
@@ -161,6 +184,12 @@ void Parse_VAR_DECLARATION()
 	follow[1] = TOKEN_KEYWORD_BEGIN;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { VAR_DECLARATION -> id : VAR_DECLARATION' } \n");
 	switch (current_token->kind)
 	{
@@ -189,6 +218,11 @@ void Parse_VAR_DECLARATION_()
 	follow[2] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { VAR_DECLARATION' -> integer | real | array [ SIZE ] of SIMPLE_TYPE | type_name } \n");
 	switch (current_token->kind)
 	{
@@ -219,6 +253,11 @@ void Parse_SIZE()
 	follow[0] = TOKEN_SEPARATION_BRACKETS_CLOSE;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { SIZE -> int_num } \n");
 	switch (current_token->kind)
 	{
@@ -243,6 +282,10 @@ void Parse_SIMPLE_TYPE()
 	follow[2] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { SIMPLE_TYPE -> integer | real } \n");
 	switch (current_token->kind)
 	{
@@ -266,6 +309,12 @@ void Parse_TYPE_DECLARATION()
 	follow[1] = TOKEN_KEYWORD_BEGIN;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { TYPE_DECLARATION -> type type_name is TYPE_INDICATOR } \n");
 	switch (current_token->kind)
 	{
@@ -292,6 +341,12 @@ void Parse_TYPE_INDICATOR()
 	follow[1] = TOKEN_KEYWORD_BEGIN;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { TYPE_INDICATOR -> ENUM_TYPE | STRUCTURE_TYPE } \n");
 	switch (current_token->kind)
 	{
@@ -320,6 +375,12 @@ void Parse_ENUM_TYPE()
 	follow[1] = TOKEN_KEYWORD_BEGIN;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { ENUM_TYPE -> enum { ID_LIST } } \n");
 	switch (current_token->kind)
 	{
@@ -344,6 +405,12 @@ void Parse_ID_LIST()
 	follow[0] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { ID_LIST -> id ID_LIST' } \n");
 	switch (current_token->kind)
 	{
@@ -366,6 +433,12 @@ void Parse_ID_LIST_()
 	follow[0] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { ID_LIST' -> ϵ | , ID_LIST } \n");
 	switch (current_token->kind)
 	{
@@ -389,6 +462,12 @@ void Parse_STRUCTURE_TYPE()
 	follow[1] = TOKEN_KEYWORD_BEGIN;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { STRUCTURE_TYPE -> struct { FIELDS } } \n");
 	switch (current_token->kind)
 	{
@@ -413,6 +492,12 @@ void Parse_FIELDS()
 	follow[0] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { FIELDS -> FIELD FIELDS' } \n");
 	switch (current_token->kind)
 	{
@@ -438,6 +523,12 @@ void Parse_FIELDS_()
 
 
 	Token* current_token = next_token();
+
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { FIELDS' -> ; FIELD FIELDS' | ϵ } \n");
 	switch (current_token->kind)
 	{
@@ -462,6 +553,11 @@ void Parse_FIELD()
 	follow[1] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { FIELD -> id : VAR_DECLARATION' } \n");
 	switch (current_token->kind)
 	{
@@ -489,6 +585,11 @@ void Parse_STATEMENTS()
 	follow[1] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { STATEMENTS -> STATEMENT STATEMENTS' } \n");
 	switch (current_token->kind)
 	{
@@ -518,6 +619,11 @@ void Parse_STATEMENTS_()
 
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { STATEMENTS' -> ; STATEMENT STATEMENTS' | ϵ } \n");
 	switch (current_token->kind)
 	{
@@ -547,6 +653,11 @@ void Parse_STATEMENT()
 	follow[2] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
+
 	fprintf(yyout, "Rule { VAR_ELEMENT = EXPRESSION | switch ( KEY ) { CASE_LIST ; default : STATEMENTS } | break | block DECLARATIONS begin STATEMENTS end } \n");
 	switch (current_token->kind)
 	{
@@ -592,6 +703,10 @@ void Parse_VAR_ELEMENT()
 	follow[0] = TOKEN_ASSIGNMENT;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { VAR_ELEMENT -> id VAR_ELEMENT'' } \n");
 	switch (current_token->kind)
 	{
@@ -614,6 +729,10 @@ void Parse_VAR_ELEMENT_()
 	eTOKENS* follow = (eTOKENS*)malloc(sizeof(eTOKENS) * 0);
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { VAR_ELEMENT' -> ϵ | [ EXPRESSION ] } \n");
 	switch (current_token->kind)
 	{
@@ -639,6 +758,10 @@ void Parse_VAR_ELEMENT__()
 	follow[0] = TOKEN_ASSIGNMENT;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { VAR_ELEMENT'' -> ϵ | [ EXPRESSION ] | . FIELD_ACCESS' } \n");
 	switch (current_token->kind)
 	{
@@ -665,6 +788,10 @@ void Parse_KEY()
 	follow[0] = TOKEN_SEPARATION_PARENTHESES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { KEY -> id KEY' } \n");
 	switch (current_token->kind)
 	{
@@ -688,6 +815,10 @@ void Parse_KEY_()
 	follow[0] = TOKEN_SEPARATION_PARENTHESES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { KEY' -> ϵ | [ EXPRESSION ] | . FIELD_ACCESS' } \n");
 	switch (current_token->kind)
 	{
@@ -714,6 +845,10 @@ void Parse_CASE_LIST()
 	follow[0] = TOKEN_SEPARATION_SEMICOLON;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { CASE_LIST -> CASE CASE_LIST' } \n");
 	switch (current_token->kind)
 	{
@@ -738,6 +873,10 @@ void Parse_CASE_LIST_()
 	follow[0] = TOKEN_SEPARATION_SEMICOLON;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { CASE_LIST' -> case KEY_VALUE : { STATEMENTS } CASE_LIST' | ϵ } \n");
 	switch (current_token->kind)
 	{
@@ -766,6 +905,10 @@ void Parse_CASE()
 	follow[1] = TOKEN_KEYWORD_CASE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { CASE -> case KEY_VALUE : { STATEMENTS } } \n");
 	switch (current_token->kind)
 	{
@@ -793,6 +936,10 @@ void Parse_KEY_VALUE()
 	follow[0] = TOKEN_SEPARATION_COLON;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { KEY_VALUE -> int_num | id } \n");
 	switch (current_token->kind)
 	{
@@ -814,6 +961,10 @@ void Parse_FIELD_ACCESS()
 	eTOKENS* follow = (eTOKENS*)malloc(sizeof(eTOKENS) * 0);
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { FIELD_ACCESS -> id . FIELD_ACCESS' } \n");
 	switch (current_token->kind)
 	{
@@ -847,6 +998,10 @@ void Parse_FIELD_ACCESS_()
 	follow[9] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { FIELD_ACCESS' -> id FIELD_ACCESS'' } \n");
 	switch (current_token->kind)
 	{
@@ -879,6 +1034,10 @@ void Parse_FIELD_ACCESS__()
 	follow[9] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { FIELD_ACCESS'' -> ϵ | . FIELD_ACCESS' } \n");
 	switch (current_token->kind)
 	{
@@ -906,6 +1065,10 @@ void Parse_EXPRESSION()
 	follow[3] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { EXPRESSION -> SIMPLE_EXPRESSION EXPRESSION' } \n");
 	switch (current_token->kind)
 	{
@@ -939,6 +1102,10 @@ void Parse_EXPRESSION_()
 	follow[3] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { EXPRESSION' -> ϵ | ar_op EXPRESSION } \n");
 	switch (current_token->kind)
 	{
@@ -975,6 +1142,10 @@ void Parse_SIMPLE_EXPRESSION()
 	follow[7] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { SIMPLE_EXPRESSION -> id SIMPLE_EXPRESSION' | int_num | real_num } \n");
 	switch (current_token->kind)
 	{
@@ -1010,6 +1181,10 @@ void Parse_SIMPLE_EXPRESSION_()
 	follow[7] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	if (!current_token)
+	{
+		return;
+	}
 	fprintf(yyout, "Rule { SIMPLE_EXPRESSION' -> ϵ | [ EXPRESSION ] | . FIELD_ACCESS' } \n");
 	switch (current_token->kind)
 	{
