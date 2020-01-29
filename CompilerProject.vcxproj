@@ -151,12 +151,16 @@
     </Flex>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Hashtable.c" />
     <ClCompile Include="main.flex.c" />
     <ClCompile Include="Parser.c" />
+    <ClCompile Include="SymbolTable.c" />
     <ClCompile Include="Token.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Hashtable.h" />
     <ClInclude Include="Parser.h" />
+    <ClInclude Include="SymbolTable.h" />
     <ClInclude Include="Token.h" />
   </ItemGroup>
   <ItemGroup>

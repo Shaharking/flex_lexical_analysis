@@ -2,10 +2,9 @@
  * Author : Pierre-Henri Symoneaux
 	https://gist.github.com/phsym/4605704
  */
-
+#include "Hashtable.h"
 #include <stdlib.h>
 #include <string.h>
-#include "Hashtable.h"
 
 // Inititalize hashtable iterator on hashtable 'ht'
 #define HT_ITERATOR(ht) {ht, 0, ht->table[0]}
@@ -199,7 +198,14 @@ void ht_clear(hashtable_t* hasht, int free_data)
 	char* k = ht_iterate_keys(&it);
 	while (k != NULL)
 	{
-		free_data ? free(ht_remove(hasht, k)) : ht_remove(hasht, k);
+		if (free_data)
+		{
+			free(ht_remove(hasht, k));
+		}
+		else
+		{
+			ht_remove(hasht, k);
+		}
 		k = ht_iterate_keys(&it);
 	}
 }

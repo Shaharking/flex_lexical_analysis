@@ -92,6 +92,8 @@ _{IDENTIFIER}       { create_and_store_token(TOKEN_TYPE, yytext, line); } //type
 
 int main(int argc, char **argv )
 {
+	FILE* semanticFile;
+
 	/* Reading the first file */
     yyin=fopen("C:\\temp\\test1.txt","r");
 	yyout=fopen("C:\\temp\\test1_311402739_205669625_lex.txt","w");
@@ -108,10 +110,12 @@ int main(int argc, char **argv )
 	fclose(yyout);
 	fclose(yyin);
 	yyout=fopen("C:\\temp\\test1_311402739_205669625_syntactic.txt","w");
+	semanticFile = fopen("C:\\temp\\test1_311402739_205669625_semantic.txt","w");
 
-	Parser();
+	Parser(semanticFile);
 
 	fclose(yyout);
+	fclose(semanticFile);
 
 	line = 1;
 
@@ -134,8 +138,10 @@ int main(int argc, char **argv )
     fclose(yyout);
 
     yyout=fopen("C:\\temp\\test2_311402739_205669625_syntactic.txt","w");
+	semanticFile = fopen("C:\\temp\\test1_311402739_205669625_semantic.txt","w");
 
-	Parser();
+	Parser(semanticFile);
 
 	fclose(yyout);
+	fclose(semanticFile);
 }

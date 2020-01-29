@@ -1,7 +1,3 @@
 ﻿  Process "main.lex" flex file
-  Token.c
-Z:\Development\Compilation\CompilerProject\CompilerProject\Token.c(271,11): warning C4098: 'parserErrorHandler': 'void' function returning a value
   main.flex.c
-  Generating Code...
-Z:\Development\Compilation\CompilerProject\CompilerProject\Token.c(277,32): warning C4090: 'return': different 'const' qualifiers
   CompilerProject.vcxproj -> Z:\Development\Compilation\CompilerProject\Compile\CompilerProject.exe

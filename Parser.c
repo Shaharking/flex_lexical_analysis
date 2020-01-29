@@ -1,21 +1,67 @@
-﻿#include "Parser.h"
-#include "Token.h"
+﻿#pragma warning(disable:6011)
 
-int match(eTOKENS token, eTOKENS* follow, int followSize)
+#include "Parser.h"
+#include "Token.h"
+#include "SymbolTable.h"
+
+SymbolTable* currentTable;
+
+SymbolTableEntry* _errorEntry; 
+SymbolTableEntry* _intgerEntry;
+
+FILE* currentSemanticFile;
+
+SymbolTableEntry* createIntgerEntry()
+{
+	if (_intgerEntry == NULL)
+	{
+		_intgerEntry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry*));
+		_intgerEntry->role = ROLE_VARIABLE_SIMPLE_INTEGER;
+	}
+	return _intgerEntry;
+}
+
+SymbolTableEntry* createErrorEntry()
+{
+	if (_errorEntry == NULL) 
+	{
+		_errorEntry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry*));
+		_errorEntry->role = ROLE_UNDEFINED;
+	}
+	return _errorEntry;
+}
+
+int CompareEntryTypes(SymbolTableEntry* a, SymbolTableEntry* b)
+{
+	if (a != NULL && b == NULL || a == NULL && b != NULL)
+	{
+		return 0;
+	}
+	if (a->role != b->role)
+	{
+		return 0;
+	}
+	if (a->role == ROLE_VARIABLE_SIMPLE_INTEGER || a->role == ROLE_VARIABLE_SIMPLE_REAL)
+	{
+		return 1;
+	}
+	return a->role_value == b->role_value;
+}
+
+Token* match(eTOKENS token, eTOKENS* follow, int followSize)
 {
 	Token* current_token = next_token();
 	if (current_token->kind != token)
 	{
 		parserErrorHandler(current_token, follow, followSize);
-		return FALSE;
 	}
-	return TRUE;
+	return current_token;
 }
 
-void Parser()
+void Parser(FILE* semanticFile)
 {
 	set_token_pointer_to_head_of_list();
-
+	currentSemanticFile = semanticFile;
 	Parse_PROGRAM();
 }
 
@@ -30,18 +76,29 @@ void Parse_PROGRAM()
 	Token* current_token = next_token();
 	current_token = back_token();
 
+	SymbolTable* newScopeTable;
+
 	if (!current_token)
 	{
 		return;
 	}
-
+	
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_BLOCK:
 		// PROGRAM -> BLOCK
 		fprintf(yyout, "Rule { PROGRAM -> BLOCK } \n");
 		_set_token_pointer_head_warning_from_parse_program_only_();
+
+		// Program there is only so we set the "root" SymbolTable
+		newScopeTable = (SymbolTable*)malloc(sizeof(SymbolTable));
+		currentTable = init_symboltable(newScopeTable, currentTable);
+
 		Parse_BLOCK();
+
+		destroy_symboltable(newScopeTable);
+		free(newScopeTable);
+		currentTable = NULL;
 		break;
 	default:
 		// Error handling
@@ -65,14 +122,24 @@ void Parse_BLOCK()
 		return;
 	}
 
+	SymbolTable* newScopeTable;
+
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_BLOCK:
 		fprintf(yyout, "Rule { BLOCK -> block DECLARATIONS begin STATEMENTS end } \n");
+
+		newScopeTable = (SymbolTable*)malloc(sizeof(SymbolTable));
+		currentTable = init_symboltable(newScopeTable, currentTable);
+
 		Parse_DECLARATIONS();
 		match(TOKEN_KEYWORD_BEGIN, follow, 1);
 		Parse_STATEMENTS();
 		match(TOKEN_KEYWORD_END, follow, 1);
+
+		currentTable = newScopeTable->parent;
+		destroy_symboltable(newScopeTable);
+		free(newScopeTable);
 		break;
 	default:
 		// Error handling
@@ -190,12 +257,31 @@ void Parse_VAR_DECLARATION()
 		return;
 	}
 
+	SymbolTableEntry* entry;
+	char* name;
 	fprintf(yyout, "Rule { VAR_DECLARATION -> id : VAR_DECLARATION' } \n");
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
+		
+		if (lookup_symboltable_variable(currentTable, current_token->lexeme) == NULL)
+		{
+			name = current_token->lexeme;
+		}
+		else
+		{
+			name = NULL;
+			fprintf(currentSemanticFile, "Error: line %d duplicated declaration of %s \n", current_token->lineNumber, current_token->lexeme);
+		}
+
 		match(TOKEN_SEPARATION_COLON, follow, 2);
-		Parse_VAR_DECLARATION_();
+		entry = Parse_VAR_DECLARATION_();
+		if (entry != NULL && name != NULL)
+		{
+			entry->name = name;
+			insert_symboltable(currentTable, name, entry);
+		}
+		
 		break;
 	default:
 		// Error handling
@@ -204,7 +290,7 @@ void Parse_VAR_DECLARATION()
 	}
 }
 
-void Parse_VAR_DECLARATION_()
+SymbolTableEntry* Parse_VAR_DECLARATION_()
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 4);
 	first[0] = TOKEN_KEYWORD_ARRAY;
@@ -222,29 +308,73 @@ void Parse_VAR_DECLARATION_()
 	{
 		return;
 	}
+	SymbolTableEntry* entry;
+	entry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
 
+	void* type;
+	ArrayVariable* role_value;
+	SymbolTableEntry* arrayType;
 	fprintf(yyout, "Rule { VAR_DECLARATION' -> integer | real | array [ SIZE ] of SIMPLE_TYPE | type_name } \n");
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_INTEGER:
+		entry->role = ROLE_VARIABLE_SIMPLE_INTEGER;
+		return entry;
 	case TOKEN_KEYWORD_REAL:
+		entry->role = ROLE_VARIABLE_SIMPLE_REAL;
+		return entry;
 	case TOKEN_TYPE:
+		type = find_symboltable_struct(currentTable, current_token->lexeme);
+		if (type != NULL)
+		{
+			entry->role = ROLE_TYPE_STRACTURE;
+			entry->role_value = type;
+			return entry;
+		}
+
+		if (type == NULL)
+		{
+			type = find_symboltable_enum(currentTable, current_token->lexeme);
+		}
+
+		if (type != NULL)
+		{
+			entry->role = ROLE_TYPE_ENUM;
+			entry->role_value = type;
+			return entry;
+		}
+
+		if (type == NULL)
+		{
+			fprintf(currentSemanticFile, "Error: line %d type %s is not defined\n", current_token->lineNumber, current_token->lexeme);
+			entry->role_value = ROLE_UNDEFINED;
+			return entry;
+		}
 		break;
 	case TOKEN_KEYWORD_ARRAY:
+		role_value = (ArrayVariable*)malloc(sizeof(ArrayVariable));
 		match(TOKEN_SEPARATION_BRACKETS_OPEN, follow, 3);
-		Parse_SIZE();
+		role_value->size = Parse_SIZE();
 		match(TOKEN_SEPARATION_BRACKETS_CLOSE, follow, 3);
 		match(TOKEN_KEYWORD_OF, follow, 3);
-		Parse_SIMPLE_TYPE();
+		// TODO: continue handle simple type
+		// creates role_value type
+		arrayType = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
+		arrayType->role = Parse_SIMPLE_TYPE();
+		role_value->type = arrayType;
+		entry->role_value = role_value;
+		entry->role = ROLE_VARIABLE_ARRAY;
+		return entry;
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 3);
+		return NULL;
 		break;
 	}
 }
 
-void Parse_SIZE()
+int Parse_SIZE()
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_INTEGER;
@@ -262,15 +392,16 @@ void Parse_SIZE()
 	switch (current_token->kind)
 	{
 	case TOKEN_INTEGER:
-		break;
+		return atoi(current_token->lexeme);
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 1);
 		break;
 	}
+	return -1;
 }
 
-void Parse_SIMPLE_TYPE()
+int Parse_SIMPLE_TYPE()
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 2);
 	first[0] = TOKEN_KEYWORD_INTEGER;
@@ -290,8 +421,9 @@ void Parse_SIMPLE_TYPE()
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_INTEGER:
+		return SIMPLETYPE_INTEGER;
 	case TOKEN_KEYWORD_REAL:
-		break;
+		return SIMPLETYPE_REAL;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 3);
@@ -309,7 +441,7 @@ void Parse_TYPE_DECLARATION()
 	follow[1] = TOKEN_KEYWORD_BEGIN;
 
 	Token* current_token = next_token();
-
+	Token* temp_token;
 	if (!current_token)
 	{
 		return;
@@ -319,9 +451,9 @@ void Parse_TYPE_DECLARATION()
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_TYPE:
-		match(TOKEN_TYPE, follow, 2);
+		temp_token = match(TOKEN_TYPE, follow, 2);
 		match(TOKEN_KEYWORD_IS, follow, 2);
-		Parse_TYPE_INDICATOR();
+		Parse_TYPE_INDICATOR(temp_token->lexeme);
 		break;
 	default:
 		// Error handling
@@ -330,7 +462,7 @@ void Parse_TYPE_DECLARATION()
 	}
 }
 
-void Parse_TYPE_INDICATOR()
+void Parse_TYPE_INDICATOR(char * type_name)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 2);
 	first[0] = TOKEN_KEYWORD_ENUM;
@@ -347,16 +479,46 @@ void Parse_TYPE_INDICATOR()
 		return;
 	}
 
+	SymbolTableEntry* entry;
+
 	fprintf(yyout, "Rule { TYPE_INDICATOR -> ENUM_TYPE | STRUCTURE_TYPE } \n");
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_ENUM:
 		current_token = back_token();
-		Parse_ENUM_TYPE();
+		// Todo: continue parsing ENUM
+		if (find_symboltable_enum(currentTable, type_name) == NULL)
+		{
+			entry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
+			entry->name = type_name;
+			entry->role = ROLE_TYPE_ENUM;
+			entry->role_value = (EnumType*)malloc(sizeof(EnumType));
+			((EnumType*)entry->role_value)->values = ht_create(HASH_ENUM_SIZE);
+			insert_symboltable_enum(currentTable, type_name, entry);
+		}
+		else
+		{
+			fprintf(currentSemanticFile, "Error: line %d duplicated struct declaration of %s \n", current_token->lineNumber, current_token->lexeme);
+		}
+		Parse_ENUM_TYPE(type_name);
 		break;
 	case TOKEN_KEYWORD_STRUCT:
 		current_token = back_token();
-		Parse_STRUCTURE_TYPE();
+		if (find_symboltable_struct(currentTable, type_name) == NULL)
+		{
+			entry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
+			entry->name = type_name;
+			entry->role = ROLE_TYPE_STRACTURE;
+			entry->role_value = (StructType*)malloc(sizeof(StructType));
+			((StructType*)entry->role_value)->fields = ht_create(HASH_STRUCT_SIZE);
+			insert_symboltable_struct(currentTable, type_name, entry);
+		}
+		else
+		{
+			fprintf(currentSemanticFile, "Error: line %d duplicated struct declaration of %s \n", current_token->lineNumber, current_token->lexeme);
+		}
+		// Todo: continue parsing TYPE
+		Parse_STRUCTURE_TYPE(type_name);
 		break;
 	default:
 		// Error handling
@@ -365,7 +527,7 @@ void Parse_TYPE_INDICATOR()
 	}
 }
 
-void Parse_ENUM_TYPE()
+void Parse_ENUM_TYPE(char * type_name)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_KEYWORD_ENUM;
@@ -386,7 +548,7 @@ void Parse_ENUM_TYPE()
 	{
 	case TOKEN_KEYWORD_ENUM:
 		match(TOKEN_SEPARATION_CURLY_BRACES_OPEN, follow, 2);
-		Parse_ID_LIST();
+		Parse_ID_LIST(type_name);
 		match(TOKEN_SEPARATION_CURLY_BRACES_CLOSE, follow, 2);
 		break;
 	default:
@@ -396,7 +558,7 @@ void Parse_ENUM_TYPE()
 	}
 }
 
-void Parse_ID_LIST()
+void Parse_ID_LIST(char * type_name)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_IDENTIFIER;
@@ -405,7 +567,7 @@ void Parse_ID_LIST()
 	follow[0] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
-
+	EnumType* enumType;
 	if (!current_token)
 	{
 		return;
@@ -415,7 +577,16 @@ void Parse_ID_LIST()
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
-		Parse_ID_LIST_();
+		enumType = (EnumType*)find_symboltable_enum(currentTable, type_name);
+		if (ht_get(enumType->values, current_token->lexeme) == NULL)
+		{
+			ht_put(enumType->values, current_token->lexeme, 1);
+		}
+		else
+		{
+			fprintf(currentSemanticFile, "Error: line %d duplicated id declaration for enum %s \n", current_token->lineNumber, current_token->lexeme);
+		}
+		Parse_ID_LIST_(type_name);
 		break;
 	default:
 		// Error handling
@@ -424,7 +595,7 @@ void Parse_ID_LIST()
 	}
 }
 
-void Parse_ID_LIST_()
+void Parse_ID_LIST_(char* type_name)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_SEPARATION_COMMA;
@@ -443,7 +614,7 @@ void Parse_ID_LIST_()
 	switch (current_token->kind)
 	{
 	case TOKEN_SEPARATION_COMMA:
-		Parse_ID_LIST();
+		Parse_ID_LIST(type_name);
 		break;
 	default:
 		// Error handling
@@ -452,7 +623,7 @@ void Parse_ID_LIST_()
 	}
 }
 
-void Parse_STRUCTURE_TYPE()
+void Parse_STRUCTURE_TYPE(char* type_name)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_KEYWORD_STRUCT;
@@ -473,7 +644,8 @@ void Parse_STRUCTURE_TYPE()
 	{
 	case TOKEN_KEYWORD_STRUCT:
 		match(TOKEN_SEPARATION_CURLY_BRACES_OPEN, follow, 2);
-		Parse_FIELDS();
+		//TODO: Continue asssemble the struct
+		Parse_FIELDS(type_name);
 		match(TOKEN_SEPARATION_CURLY_BRACES_CLOSE, follow, 2);
 		break;
 	default:
@@ -483,7 +655,7 @@ void Parse_STRUCTURE_TYPE()
 	}
 }
 
-void Parse_FIELDS()
+void Parse_FIELDS(char* type_name)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_IDENTIFIER;
@@ -503,8 +675,9 @@ void Parse_FIELDS()
 	{
 	case TOKEN_IDENTIFIER:
 		current_token = back_token();
-		Parse_FIELD();
-		Parse_FIELDS_();
+		//TODO: get the the struct and pass it to the child
+		Parse_FIELD(type_name);
+		Parse_FIELDS_(type_name);
 		break;
 	default:
 		// Error handling
@@ -513,7 +686,7 @@ void Parse_FIELDS()
 	}
 }
 
-void Parse_FIELDS_()
+void Parse_FIELDS_(char* type_name)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_SEPARATION_SEMICOLON;
@@ -533,8 +706,8 @@ void Parse_FIELDS_()
 	switch (current_token->kind)
 	{
 	case TOKEN_SEPARATION_SEMICOLON:
-		Parse_FIELD();
-		Parse_FIELDS_();
+		Parse_FIELD(type_name);
+		Parse_FIELDS_(type_name);
 		break;
 	default:
 		// Error handling
@@ -543,7 +716,7 @@ void Parse_FIELDS_()
 	}
 }
 
-void Parse_FIELD()
+void Parse_FIELD(char * type_name)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_IDENTIFIER;
@@ -557,13 +730,28 @@ void Parse_FIELD()
 	{
 		return;
 	}
-
+	SymbolTableEntry* entry;
+	SymbolTableEntry* sturctEntry;
+	StructType* structType;
+	char* name;
 	fprintf(yyout, "Rule { FIELD -> id : VAR_DECLARATION' } \n");
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
+		name = current_token->lexeme;
+		// TODO: Search that the name doesn't exist already in the struct
+		structType = (StructType*)lookup_symboltable_struct(currentTable, type_name);
 		match(TOKEN_SEPARATION_COLON, follow, 2);
-		Parse_VAR_DECLARATION_();
+		entry = Parse_VAR_DECLARATION_();
+		if (ht_get(structType->fields, name) == NULL)
+		{
+			entry->name = name;
+			ht_put(structType->fields, name, entry);
+		}
+		else
+		{
+			fprintf(currentSemanticFile, "Error: line %d duplicated field in struct %s \n", current_token->lineNumber, name);
+		}
 		break;
 	default:
 		// Error handling
@@ -653,6 +841,11 @@ void Parse_STATEMENT()
 	follow[2] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* entry;
+	SymbolTableEntry* expressionEntry;
+	SymbolTableEntry* keyEntry;
+	Token* temp_token;
+	int compareResult;
 	if (!current_token)
 	{
 		return;
@@ -663,16 +856,26 @@ void Parse_STATEMENT()
 	{
 	case TOKEN_IDENTIFIER:
 		current_token = back_token();
-		Parse_VAR_ELEMENT();
-		match(TOKEN_ASSIGNMENT, follow, 3);
-		Parse_EXPRESSION();
+		entry = Parse_VAR_ELEMENT();
+		temp_token = match(TOKEN_ASSIGNMENT, follow, 3);
+		expressionEntry = Parse_EXPRESSION(entry);
+		compareResult = CompareEntryTypes(entry, expressionEntry);
+		if (entry->role == ROLE_TYPE_STRACTURE || entry->role == ROLE_VARIABLE_ARRAY)
+		{
+			fprintf(currentSemanticFile, "Error: line %d left-hand side of assignment can only be of a simple type or of an enumeration type \n", current_token->lineNumber);
+		}
+		else if (compareResult == 0)
+		{
+			fprintf(currentSemanticFile, "Error: line %d assignment of two diffrent types \n", temp_token->lineNumber);
+		}
+		
 		break;
 	case TOKEN_KEYWORD_SWITCH:
 		match(TOKEN_SEPARATION_PARENTHESES_OPEN, follow, 3);
-		Parse_KEY();
+		keyEntry = Parse_KEY();
 		match(TOKEN_SEPARATION_PARENTHESES_CLOSE, follow, 3);
 		match(TOKEN_SEPARATION_CURLY_BRACES_OPEN, follow, 3);
-		Parse_CASE_LIST();
+		Parse_CASE_LIST(keyEntry);
 		match(TOKEN_SEPARATION_SEMICOLON, follow, 3);
 		match(TOKEN_KEYWORD_DEFAULT, follow, 3);
 		match(TOKEN_SEPARATION_COLON, follow, 3);
@@ -682,10 +885,14 @@ void Parse_STATEMENT()
 	case TOKEN_KEYWORD_BREAK:
 		break;
 	case TOKEN_KEYWORD_BLOCK:
-		Parse_DECLARATIONS();
-		match(TOKEN_KEYWORD_BEGIN, follow, 3);
-		Parse_STATEMENTS();
-		match(TOKEN_KEYWORD_END, follow, 3);
+		/*
+			Parse_DECLARATIONS();
+			match(TOKEN_KEYWORD_BEGIN, follow, 3);
+			Parse_STATEMENTS();
+			match(TOKEN_KEYWORD_END, follow, 3);
+		*/
+		current_token = back_token();
+		Parse_BLOCK();
 		break;
 	default:
 		// Error handling
@@ -694,7 +901,7 @@ void Parse_STATEMENT()
 	}
 }
 
-void Parse_VAR_ELEMENT()
+SymbolTableEntry* Parse_VAR_ELEMENT()
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_IDENTIFIER;
@@ -703,24 +910,29 @@ void Parse_VAR_ELEMENT()
 	follow[0] = TOKEN_ASSIGNMENT;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* entry;
 	if (!current_token)
 	{
-		return;
+		return createErrorEntry();
 	}
 	fprintf(yyout, "Rule { VAR_ELEMENT -> id VAR_ELEMENT'' } \n");
+
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
-		Parse_VAR_ELEMENT__();
+		entry = (SymbolTableEntry*)find_symboltable_variable(currentTable, current_token->lexeme);
+		entry = Parse_VAR_ELEMENT__(entry);
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 1);
+		entry = createErrorEntry();
 		break;
 	}
-
+	return entry;
 }
 
+/*
 void Parse_VAR_ELEMENT_()
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
@@ -746,8 +958,9 @@ void Parse_VAR_ELEMENT_()
 		break;
 	}
 }
+*/
 
-void Parse_VAR_ELEMENT__()
+SymbolTableEntry* Parse_VAR_ELEMENT__(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 2);
 	first[0] = TOKEN_FIELD_ACCESS;
@@ -758,6 +971,9 @@ void Parse_VAR_ELEMENT__()
 	follow[0] = TOKEN_ASSIGNMENT;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* temp;
+	ArrayVariable* arrayVar;
+	int size;
 	if (!current_token)
 	{
 		return;
@@ -766,20 +982,43 @@ void Parse_VAR_ELEMENT__()
 	switch (current_token->kind)
 	{
 	case TOKEN_SEPARATION_BRACKETS_OPEN:
-		Parse_EXPRESSION();
+		// Todo expression should return a intger number
+		temp = createIntgerEntry();
+		temp = Parse_EXPRESSION(temp);
+		if (entry->role != ROLE_VARIABLE_ARRAY)
+		{
+			fprintf(currentSemanticFile, "Error: line %d type %s is not array! but trying to accesss it like array\n", current_token->lineNumber, entry->name);
+			entry = createErrorEntry();
+		}
+		else if (temp->role != ROLE_VARIABLE_SIMPLE_INTEGER)
+		{
+			fprintf(currentSemanticFile, "Error: line %d type %s is array! but index is not integer\n", current_token->lineNumber, entry->name);
+			entry = createErrorEntry();
+		}
+		else
+		{
+			arrayVar = (ArrayVariable*)entry->role_value;
+			entry = arrayVar->type;
+		}
 		match(TOKEN_SEPARATION_BRACKETS_CLOSE, follow, 1);
+		return entry;
 		break;
 	case TOKEN_FIELD_ACCESS:
-		Parse_FIELD_ACCESS_();
+		if (entry->role != ROLE_TYPE_STRACTURE)
+		{
+			fprintf(currentSemanticFile, "Error: line %d type %s is not structure! but trying to accesss field like a struct\n", current_token->lineNumber, entry->name);
+		}
+		return Parse_FIELD_ACCESS_(entry);
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 1);
+		return entry;
 		break;
 	}
 }
 
-void Parse_KEY()
+SymbolTableEntry* Parse_KEY()
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_IDENTIFIER;
@@ -788,6 +1027,7 @@ void Parse_KEY()
 	follow[0] = TOKEN_SEPARATION_PARENTHESES_CLOSE;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* entry;
 	if (!current_token)
 	{
 		return;
@@ -796,16 +1036,19 @@ void Parse_KEY()
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
-		Parse_KEY_();
+		entry = find_symboltable_variable(currentTable, current_token->lexeme);
+		entry = Parse_KEY_(entry);
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 1);
+		entry = createErrorEntry();
 		break;
 	}
+	return entry;
 }
 
-void Parse_KEY_()
+SymbolTableEntry* Parse_KEY_(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 2);
 	first[0] = TOKEN_FIELD_ACCESS;
@@ -820,23 +1063,42 @@ void Parse_KEY_()
 		return;
 	}
 	fprintf(yyout, "Rule { KEY' -> ϵ | [ EXPRESSION ] | . FIELD_ACCESS' } \n");
+	SymbolTableEntry* temp;
 	switch (current_token->kind)
 	{
 	case TOKEN_SEPARATION_BRACKETS_OPEN:
-		Parse_EXPRESSION();
+		if (entry->role != ROLE_VARIABLE_ARRAY)
+		{
+			fprintf(currentSemanticFile, "Error: line %d, Trying to access KEY as array, but it's not an array!\n", current_token->lineNumber);
+		}
+		temp = Parse_EXPRESSION(NULL);
+		if (temp->role != ROLE_VARIABLE_SIMPLE_INTEGER)
+		{
+			fprintf(currentSemanticFile, "Error: line %d, Trying to access KEY array, but index is not a number!\n", current_token->lineNumber);
+		}
+		
+		if (temp->role == ROLE_VARIABLE_SIMPLE_INTEGER && entry->role == ROLE_VARIABLE_ARRAY)
+		{
+			entry = ((ArrayVariable*)entry->role_value)->type;
+		}
+		else
+		{
+			entry = createErrorEntry();
+		}
 		match(TOKEN_SEPARATION_BRACKETS_CLOSE, follow, 1);
 		break;
 	case TOKEN_FIELD_ACCESS:
-		Parse_FIELD_ACCESS_();
+		entry = Parse_FIELD_ACCESS_(entry);
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 1);
 		break;
 	}
+	return entry;
 }
 
-void Parse_CASE_LIST()
+void Parse_CASE_LIST(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_KEYWORD_CASE;
@@ -854,8 +1116,8 @@ void Parse_CASE_LIST()
 	{
 	case TOKEN_KEYWORD_CASE:
 		current_token = back_token();
-		Parse_CASE();
-		Parse_CASE_LIST_();
+		Parse_CASE(entry);
+		Parse_CASE_LIST_(entry);
 		break;
 	default:
 		// Error handling
@@ -864,7 +1126,7 @@ void Parse_CASE_LIST()
 	}
 }
 
-void Parse_CASE_LIST_()
+void Parse_CASE_LIST_(SymbolTableEntry *entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_KEYWORD_CASE;
@@ -873,6 +1135,7 @@ void Parse_CASE_LIST_()
 	follow[0] = TOKEN_SEPARATION_SEMICOLON;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* temp;
 	if (!current_token)
 	{
 		return;
@@ -881,12 +1144,16 @@ void Parse_CASE_LIST_()
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_CASE:
-		Parse_KEY_VALUE();
+		temp = Parse_KEY_VALUE(entry);
+		if (!CompareEntryTypes(entry, temp))
+		{
+			fprintf(currentSemanticFile, "Error: line %d KEY_VALUE is not the same type as KEY  \n", current_token->lineNumber);
+		}
 		match(TOKEN_SEPARATION_COLON, follow, 1);
 		match(TOKEN_SEPARATION_CURLY_BRACES_OPEN, follow, 1);
 		Parse_STATEMENTS();
 		match(TOKEN_SEPARATION_CURLY_BRACES_CLOSE, follow, 1);
-		Parse_CASE_LIST_();
+		Parse_CASE_LIST_(entry);
 		break;
 	default:
 		// Error handling
@@ -895,7 +1162,7 @@ void Parse_CASE_LIST_()
 	}
 }
 
-void Parse_CASE()
+void Parse_CASE(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_KEYWORD_CASE;
@@ -905,6 +1172,7 @@ void Parse_CASE()
 	follow[1] = TOKEN_KEYWORD_CASE;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* temp;
 	if (!current_token)
 	{
 		return;
@@ -913,7 +1181,11 @@ void Parse_CASE()
 	switch (current_token->kind)
 	{
 	case TOKEN_KEYWORD_CASE:
-		Parse_KEY_VALUE();
+		temp = Parse_KEY_VALUE(entry);
+		if (!CompareEntryTypes(entry, temp))
+		{
+			fprintf(currentSemanticFile, "Error: line %d KEY_VALUE is not the same type as KEY  \n", current_token->lineNumber);
+		}
 		match(TOKEN_SEPARATION_COLON, follow, 2);
 		match(TOKEN_SEPARATION_CURLY_BRACES_OPEN, follow, 2);
 		Parse_STATEMENTS();
@@ -926,7 +1198,7 @@ void Parse_CASE()
 	}
 }
 
-void Parse_KEY_VALUE()
+SymbolTableEntry* Parse_KEY_VALUE(SymbolTableEntry *entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 2);
 	first[0] = TOKEN_INTEGER;
@@ -936,6 +1208,7 @@ void Parse_KEY_VALUE()
 	follow[0] = TOKEN_SEPARATION_COLON;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* temp;
 	if (!current_token)
 	{
 		return;
@@ -944,13 +1217,30 @@ void Parse_KEY_VALUE()
 	switch (current_token->kind)
 	{
 	case TOKEN_INTEGER:
+		temp = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
+		temp->role = ROLE_VARIABLE_SIMPLE_INTEGER;
+		return temp;
+		break;
 	case TOKEN_IDENTIFIER:
+		if (entry->role != ROLE_TYPE_ENUM)
+		{
+			printf(currentSemanticFile, "Error: line %d, KEY must be either integer or enumeration type ", current_token->lineNumber);
+			return createErrorEntry();
+		}
+		if (ht_get(((EnumType*)entry->role_value)->values, current_token->lexeme) != NULL)
+		{
+			return entry;
+		}
+		return createErrorEntry();
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 1);
+		temp = createErrorEntry();
+		return temp;
 		break;
 	}
+	return entry;
 }
 
 void Parse_FIELD_ACCESS()
@@ -959,8 +1249,9 @@ void Parse_FIELD_ACCESS()
 	first[0] = TOKEN_IDENTIFIER;
 
 	eTOKENS* follow = (eTOKENS*)malloc(sizeof(eTOKENS) * 0);
-
+	
 	Token* current_token = next_token();
+	SymbolTableEntry* entry;
 	if (!current_token)
 	{
 		return;
@@ -969,8 +1260,10 @@ void Parse_FIELD_ACCESS()
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
+		entry = find_symboltable_variable(currentTable, current_token->lexeme);
 		match(TOKEN_FIELD_ACCESS, follow, 0);
-		Parse_FIELD_ACCESS_();
+		
+		Parse_FIELD_ACCESS_(entry);
 		break;
 	default:
 		// Error handling
@@ -979,7 +1272,7 @@ void Parse_FIELD_ACCESS()
 	}
 }
 
-void Parse_FIELD_ACCESS_()
+SymbolTableEntry* Parse_FIELD_ACCESS_(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_IDENTIFIER;
@@ -998,6 +1291,8 @@ void Parse_FIELD_ACCESS_()
 	follow[9] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	StructType* sturctType;
+	SymbolTableEntry* tempEntry; 
 	if (!current_token)
 	{
 		return;
@@ -1006,16 +1301,28 @@ void Parse_FIELD_ACCESS_()
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
-		Parse_FIELD_ACCESS__();
+		if (entry != NULL && entry->role == ROLE_TYPE_STRACTURE)
+		{
+			sturctType = (StructType*)entry->role_value;
+			tempEntry = (SymbolTableEntry*)ht_get(sturctType->fields, current_token->lexeme);
+			if (tempEntry == NULL)
+			{
+				fprintf(currentSemanticFile, "Error: line %d, trying to access propety %s not exist on struct", current_token->lineNumber, current_token->lexeme);
+			}
+			entry = tempEntry;
+		}
+		
+		return Parse_FIELD_ACCESS__(entry);
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 10);
+		return entry;
 		break;
 	}
 }
 
-void Parse_FIELD_ACCESS__()
+SymbolTableEntry* Parse_FIELD_ACCESS__(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 1);
 	first[0] = TOKEN_FIELD_ACCESS;
@@ -1042,16 +1349,17 @@ void Parse_FIELD_ACCESS__()
 	switch (current_token->kind)
 	{
 	case TOKEN_FIELD_ACCESS:
-		Parse_FIELD_ACCESS_();
+		return Parse_FIELD_ACCESS_(entry);
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 10);
+		return entry;
 		break;
 	}
 }
 
-void Parse_EXPRESSION()
+SymbolTableEntry* Parse_EXPRESSION(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 3);
 	first[0] = TOKEN_INTEGER;
@@ -1065,6 +1373,8 @@ void Parse_EXPRESSION()
 	follow[3] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* type_simple_expression;
+	SymbolTableEntry* type_expression_;
 	if (!current_token)
 	{
 		return;
@@ -1076,18 +1386,26 @@ void Parse_EXPRESSION()
 	case TOKEN_REAL:
 	case TOKEN_IDENTIFIER:
 		current_token = back_token();
-		Parse_SIMPLE_EXPRESSION();
-		Parse_EXPRESSION_();
+		// Todo continue from Expression
+		type_simple_expression = Parse_SIMPLE_EXPRESSION(entry);
+		type_expression_ = Parse_EXPRESSION_(entry);
+		if (CompareEntryTypes(type_expression_, type_simple_expression) == 0)
+		{
+			fprintf(yyout, "Error: line %d expression using multiple types, please only one type", current_token->lineNumber);
+			type_simple_expression = createErrorEntry();
+		}
+		return type_simple_expression;
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 4);
+		return entry;
 		break;
 	}
 }
 
 
-void Parse_EXPRESSION_()
+SymbolTableEntry* Parse_EXPRESSION_(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 4);
 	first[0] = TOKEN_OPERATION_ADDITION;
@@ -1102,6 +1420,7 @@ void Parse_EXPRESSION_()
 	follow[3] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* expressionEntry;
 	if (!current_token)
 	{
 		return;
@@ -1113,16 +1432,23 @@ void Parse_EXPRESSION_()
 	case TOKEN_OPERATION_SUBTRACTION:
 	case TOKEN_OPERATION_MULTIPLICATION:
 	case TOKEN_OPERATION_DIVISION:
-		Parse_EXPRESSION();
+		expressionEntry = Parse_EXPRESSION(entry);
+		if (!(CompareEntryTypes(expressionEntry, entry) == 1 && (expressionEntry->role == ROLE_VARIABLE_SIMPLE_REAL || expressionEntry->role == ROLE_VARIABLE_SIMPLE_INTEGER)))
+		{
+			entry = createErrorEntry();
+			fprintf(yyout,"Error line %d, Arithmetic operations are only applicable to values of simple types (integer or real) ", current_token->lineNumber);
+		}
+		return entry;
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 4);
+		return entry;
 		break;
 	}
 }
 
-void Parse_SIMPLE_EXPRESSION()
+SymbolTableEntry* Parse_SIMPLE_EXPRESSION(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 3);
 	first[0] = TOKEN_INTEGER;
@@ -1142,6 +1468,10 @@ void Parse_SIMPLE_EXPRESSION()
 	follow[7] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	char* enumId;
+	EnumType* enumType;
+	SymbolTableEntry* simpleExpression;
+	SymbolTableEntry* temp;
 	if (!current_token)
 	{
 		return;
@@ -1150,19 +1480,54 @@ void Parse_SIMPLE_EXPRESSION()
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
-		Parse_SIMPLE_EXPRESSION_();
+		enumId = current_token->lexeme;
+
+		temp = find_symboltable_variable(currentTable, enumId);
+		if (temp != NULL)
+		{
+			entry = temp;
+		}
+
+		entry = Parse_SIMPLE_EXPRESSION_(entry);
+
+		if (entry->role == ROLE_TYPE_ENUM)
+		{
+			enumType = (EnumType*)entry->role_value;
+			if (ht_get(enumType->values, enumId) != NULL)
+			{
+				return entry;
+			}
+			else
+			{
+				return createErrorEntry();
+			}
+		}
+		else if (entry->role != ROLE_VARIABLE_SIMPLE_INTEGER && entry->role != ROLE_VARIABLE_SIMPLE_REAL)
+		{
+			return createErrorEntry();
+		}
+		return entry;
 		break;
 	case TOKEN_INTEGER:
+		entry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
+		entry->name = current_token->lexeme;
+		entry->role = ROLE_VARIABLE_SIMPLE_INTEGER;
+		return entry;
 	case TOKEN_REAL:
+		entry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
+		entry->name = current_token->lexeme;
+		entry->role = ROLE_VARIABLE_SIMPLE_REAL;
+		return entry;
 		break;
 	default:
 		parserErrorHandler(current_token, follow, 8);
+		return createErrorEntry();
 		// Error handling
 		break;
 	}
 }
 
-void Parse_SIMPLE_EXPRESSION_()
+SymbolTableEntry* Parse_SIMPLE_EXPRESSION_(SymbolTableEntry* entry)
 {
 	eTOKENS* first = (eTOKENS*)malloc(sizeof(eTOKENS) * 2);
 	first[0] = TOKEN_FIELD_ACCESS;
@@ -1181,6 +1546,8 @@ void Parse_SIMPLE_EXPRESSION_()
 	follow[7] = TOKEN_SEPARATION_CURLY_BRACES_CLOSE;
 
 	Token* current_token = next_token();
+	SymbolTableEntry* temp;
+	ArrayVariable* arrayVar;
 	if (!current_token)
 	{
 		return;
@@ -1189,15 +1556,35 @@ void Parse_SIMPLE_EXPRESSION_()
 	switch (current_token->kind)
 	{
 	case TOKEN_SEPARATION_BRACKETS_OPEN:
-		Parse_EXPRESSION();
+		if (entry->role != ROLE_VARIABLE_ARRAY)
+		{
+			fprintf(currentSemanticFile, "Error: line %d trying to access id as an array \n", current_token->lineNumber);
+		}
+		temp = Parse_EXPRESSION(createIntgerEntry());
+		if (temp->role != ROLE_VARIABLE_SIMPLE_INTEGER)
+		{
+			fprintf(currentSemanticFile, "Error: line %d trying to access array with index that is not integer %s \n", current_token->lineNumber, temp->name);
+			entry = createErrorEntry();
+		}
+		else
+		{
+			arrayVar = (ArrayVariable*)entry->role_value;
+			entry = arrayVar->type;
+		}
 		match(TOKEN_SEPARATION_BRACKETS_CLOSE, follow, 8);
+		return entry;
 		break;
 	case TOKEN_FIELD_ACCESS:
-		Parse_FIELD_ACCESS_();
+		if (entry->role != ROLE_TYPE_STRACTURE)
+		{
+			fprintf(currentSemanticFile, "Error: line %d trying to access id as an struct \n", current_token->lineNumber);
+		}
+		return Parse_FIELD_ACCESS_(entry);
 		break;
 	default:
 		// Error handling
 		parserErrorHandler(current_token, follow, 8);
+		return entry;
 		break;
 	}
 }
