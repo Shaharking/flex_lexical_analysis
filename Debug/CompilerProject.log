@@ -1,3 +1,45 @@
-﻿  Process "main.lex" flex file
-  main.flex.c
+﻿  Parser.c
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(55,1): warning C4029: declared formal parameter list different from definition
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(213,18): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(322,9): warning C4033: 'Parse_VAR_DECLARATION_' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(366,38): warning C4047: '=': 'void *' differs in levels of indirection from 'int'
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(406,9): warning C4033: 'Parse_SIZE' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(435,9): warning C4033: 'Parse_SIMPLE_TYPE' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(603,53): warning C4022: 'ht_put': pointer mismatch for actual parameter 3
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(633,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(724,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(753,20): warning C4101: 'sturctEntry': unreferenced local variable
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(834,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1003,9): warning C4033: 'Parse_VAR_ELEMENT__' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1005,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1000,6): warning C4101: 'size': unreferenced local variable
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1059,9): warning C4033: 'Parse_KEY' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1089,9): warning C4033: 'Parse_KEY_' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1091,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1170,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1243,9): warning C4033: 'Parse_KEY_VALUE' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1261,30): warning C4133: 'function': incompatible types - from 'FILE *' to 'const char *const '
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1332,9): warning C4033: 'Parse_FIELD_ACCESS_' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1381,9): warning C4033: 'Parse_FIELD_ACCESS__' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1383,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1415,9): warning C4033: 'Parse_EXPRESSION' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1462,9): warning C4033: 'Parse_EXPRESSION_' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1464,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1514,9): warning C4033: 'Parse_SIMPLE_EXPRESSION' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1510,20): warning C4101: 'simpleExpression': unreferenced local variable
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1594,9): warning C4033: 'Parse_SIMPLE_EXPRESSION_' must return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1596,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(419): warning C4715: 'Parse_SIZE': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(392): warning C4715: 'Parse_VAR_DECLARATION_': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(449): warning C4715: 'Parse_SIMPLE_TYPE': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1075): warning C4715: 'Parse_KEY': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1126): warning C4715: 'Parse_KEY_': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1045): warning C4715: 'Parse_VAR_ELEMENT__': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1278): warning C4715: 'Parse_KEY_VALUE': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1358): warning C4715: 'Parse_FIELD_ACCESS_': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1441): warning C4715: 'Parse_EXPRESSION': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1486): warning C4715: 'Parse_EXPRESSION_': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1569): warning C4715: 'Parse_SIMPLE_EXPRESSION': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1633): warning C4715: 'Parse_SIMPLE_EXPRESSION_': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1395): warning C4715: 'Parse_FIELD_ACCESS__': not all control paths return a value
   CompilerProject.vcxproj -> Z:\Development\Compilation\CompilerProject\Debug\CompilerProject.exe

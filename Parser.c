@@ -11,6 +11,7 @@ SymbolTableEntry* _intgerEntry;
 
 FILE* currentSemanticFile;
 
+// create symbol entry spefic for new intger
 SymbolTableEntry* createIntgerEntry()
 {
 	if (_intgerEntry == NULL)
@@ -21,6 +22,7 @@ SymbolTableEntry* createIntgerEntry()
 	return _intgerEntry;
 }
 
+// create symbol entry for error
 SymbolTableEntry* createErrorEntry()
 {
 	if (_errorEntry == NULL) 
@@ -31,9 +33,10 @@ SymbolTableEntry* createErrorEntry()
 	return _errorEntry;
 }
 
+// Comparing the types two types of SymbolTableEntry
 int CompareEntryTypes(SymbolTableEntry* a, SymbolTableEntry* b)
 {
-	if (a != NULL && b == NULL || a == NULL && b != NULL)
+	if (a != NULL && b == NULL || a == NULL && b != NULL || a == NULL && b == NULL)
 	{
 		return 0;
 	}
@@ -51,9 +54,15 @@ int CompareEntryTypes(SymbolTableEntry* a, SymbolTableEntry* b)
 Token* match(eTOKENS token, eTOKENS* follow, int followSize)
 {
 	Token* current_token = next_token();
+	// In case it worng, it doesn't handle errors.
 	if (current_token->kind != token)
 	{
-		parserErrorHandler(current_token, follow, followSize);
+		fprintf(yyout, "Expected token of type %s at line : %d, Actual token of type %s, lexeme : %s . \n",
+			getTokenName(token),
+			current_token->lineNumber,
+			getTokenName(current_token->kind),
+			current_token->lexeme);
+		// parserErrorHandler(current_token, follow, followSize);
 	}
 	return current_token;
 }
@@ -90,7 +99,7 @@ void Parse_PROGRAM()
 		fprintf(yyout, "Rule { PROGRAM -> BLOCK } \n");
 		_set_token_pointer_head_warning_from_parse_program_only_();
 
-		// Program there is only so we set the "root" SymbolTable
+		// Program there is only one so we set the "root" SymbolTable
 		newScopeTable = (SymbolTable*)malloc(sizeof(SymbolTable));
 		currentTable = init_symboltable(newScopeTable, currentTable);
 
@@ -129,6 +138,7 @@ void Parse_BLOCK()
 	case TOKEN_KEYWORD_BLOCK:
 		fprintf(yyout, "Rule { BLOCK -> block DECLARATIONS begin STATEMENTS end } \n");
 
+		// Creating new Symbol table and adding it to the parent
 		newScopeTable = (SymbolTable*)malloc(sizeof(SymbolTable));
 		currentTable = init_symboltable(newScopeTable, currentTable);
 
@@ -137,6 +147,7 @@ void Parse_BLOCK()
 		Parse_STATEMENTS();
 		match(TOKEN_KEYWORD_END, follow, 1);
 
+		// When we done with scope, we destory it, and free everything in it.
 		currentTable = newScopeTable->parent;
 		destroy_symboltable(newScopeTable);
 		free(newScopeTable);
@@ -264,12 +275,14 @@ void Parse_VAR_DECLARATION()
 	{
 	case TOKEN_IDENTIFIER:
 		
+		// We verify that id is not already declared in our current scope.
 		if (lookup_symboltable_variable(currentTable, current_token->lexeme) == NULL)
 		{
 			name = current_token->lexeme;
 		}
 		else
 		{
+			// if so... print that there is an error
 			name = NULL;
 			fprintf(currentSemanticFile, "Error: line %d duplicated declaration of %s \n", current_token->lineNumber, current_token->lexeme);
 		}
@@ -324,6 +337,7 @@ SymbolTableEntry* Parse_VAR_DECLARATION_()
 		entry->role = ROLE_VARIABLE_SIMPLE_REAL;
 		return entry;
 	case TOKEN_TYPE:
+		// in case it's a type, try to find in the struct symbol table 
 		type = find_symboltable_struct(currentTable, current_token->lexeme);
 		if (type != NULL)
 		{
@@ -332,6 +346,7 @@ SymbolTableEntry* Parse_VAR_DECLARATION_()
 			return entry;
 		}
 
+		// if it's not found on the struct symbol table, it must be enum
 		if (type == NULL)
 		{
 			type = find_symboltable_enum(currentTable, current_token->lexeme);
@@ -344,6 +359,7 @@ SymbolTableEntry* Parse_VAR_DECLARATION_()
 			return entry;
 		}
 
+		// if not found then it's undefined, and we print error
 		if (type == NULL)
 		{
 			fprintf(currentSemanticFile, "Error: line %d type %s is not defined\n", current_token->lineNumber, current_token->lexeme);
@@ -354,12 +370,13 @@ SymbolTableEntry* Parse_VAR_DECLARATION_()
 	case TOKEN_KEYWORD_ARRAY:
 		role_value = (ArrayVariable*)malloc(sizeof(ArrayVariable));
 		match(TOKEN_SEPARATION_BRACKETS_OPEN, follow, 3);
+		// Synthesized role that we get from the Parse Size - which return the array size
 		role_value->size = Parse_SIZE();
 		match(TOKEN_SEPARATION_BRACKETS_CLOSE, follow, 3);
 		match(TOKEN_KEYWORD_OF, follow, 3);
-		// TODO: continue handle simple type
 		// creates role_value type
 		arrayType = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
+		// Synthesized role that get the type of the array
 		arrayType->role = Parse_SIMPLE_TYPE();
 		role_value->type = arrayType;
 		entry->role_value = role_value;
@@ -486,7 +503,7 @@ void Parse_TYPE_INDICATOR(char * type_name)
 	{
 	case TOKEN_KEYWORD_ENUM:
 		current_token = back_token();
-		// Todo: continue parsing ENUM
+		// Inherited attributes - which gets the id name, we make sure that id not exists, and if so, we insert it enum symboltable
 		if (find_symboltable_enum(currentTable, type_name) == NULL)
 		{
 			entry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
@@ -498,12 +515,14 @@ void Parse_TYPE_INDICATOR(char * type_name)
 		}
 		else
 		{
+			// in case it exists, it duplicate
 			fprintf(currentSemanticFile, "Error: line %d duplicated struct declaration of %s \n", current_token->lineNumber, current_token->lexeme);
 		}
 		Parse_ENUM_TYPE(type_name);
 		break;
 	case TOKEN_KEYWORD_STRUCT:
 		current_token = back_token();
+		// Inherited attributes - which gets the id name, we make sure that id not exists, and if so, we insert it struct symboltable
 		if (find_symboltable_struct(currentTable, type_name) == NULL)
 		{
 			entry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
@@ -515,9 +534,9 @@ void Parse_TYPE_INDICATOR(char * type_name)
 		}
 		else
 		{
+			// in case it exists, it duplicate
 			fprintf(currentSemanticFile, "Error: line %d duplicated struct declaration of %s \n", current_token->lineNumber, current_token->lexeme);
 		}
-		// Todo: continue parsing TYPE
 		Parse_STRUCTURE_TYPE(type_name);
 		break;
 	default:
@@ -577,6 +596,7 @@ void Parse_ID_LIST(char * type_name)
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
+		// inherited attribute the id name, check if it exists already or not
 		enumType = (EnumType*)find_symboltable_enum(currentTable, type_name);
 		if (ht_get(enumType->values, current_token->lexeme) == NULL)
 		{
@@ -644,7 +664,6 @@ void Parse_STRUCTURE_TYPE(char* type_name)
 	{
 	case TOKEN_KEYWORD_STRUCT:
 		match(TOKEN_SEPARATION_CURLY_BRACES_OPEN, follow, 2);
-		//TODO: Continue asssemble the struct
 		Parse_FIELDS(type_name);
 		match(TOKEN_SEPARATION_CURLY_BRACES_CLOSE, follow, 2);
 		break;
@@ -739,11 +758,11 @@ void Parse_FIELD(char * type_name)
 	{
 	case TOKEN_IDENTIFIER:
 		name = current_token->lexeme;
-		// TODO: Search that the name doesn't exist already in the struct
+		// Create the fields of the new struct, inherited attribute is the struct name
 		structType = (StructType*)lookup_symboltable_struct(currentTable, type_name);
 		match(TOKEN_SEPARATION_COLON, follow, 2);
 		entry = Parse_VAR_DECLARATION_();
-		if (ht_get(structType->fields, name) == NULL)
+		if (entry != NULL && ht_get(structType->fields, name) == NULL)
 		{
 			entry->name = name;
 			ht_put(structType->fields, name, entry);
@@ -860,7 +879,12 @@ void Parse_STATEMENT()
 		temp_token = match(TOKEN_ASSIGNMENT, follow, 3);
 		expressionEntry = Parse_EXPRESSION(entry);
 		compareResult = CompareEntryTypes(entry, expressionEntry);
-		if (entry->role == ROLE_TYPE_STRACTURE || entry->role == ROLE_VARIABLE_ARRAY)
+		// Compare the result of the left side and right side of the assignment opreator, to make sure they  are same type.
+		if (entry == NULL)
+		{
+			fprintf(currentSemanticFile, "Error: line %d assignment problems \n", temp_token->lineNumber);
+		}
+		else if (entry->role == ROLE_TYPE_STRACTURE || entry->role == ROLE_VARIABLE_ARRAY)
 		{
 			fprintf(currentSemanticFile, "Error: line %d left-hand side of assignment can only be of a simple type or of an enumeration type \n", current_token->lineNumber);
 		}
@@ -985,6 +1009,7 @@ SymbolTableEntry* Parse_VAR_ELEMENT__(SymbolTableEntry* entry)
 		// Todo expression should return a intger number
 		temp = createIntgerEntry();
 		temp = Parse_EXPRESSION(temp);
+		// Check if you tring to access array propley
 		if (entry->role != ROLE_VARIABLE_ARRAY)
 		{
 			fprintf(currentSemanticFile, "Error: line %d type %s is not array! but trying to accesss it like array\n", current_token->lineNumber, entry->name);
@@ -1004,6 +1029,7 @@ SymbolTableEntry* Parse_VAR_ELEMENT__(SymbolTableEntry* entry)
 		return entry;
 		break;
 	case TOKEN_FIELD_ACCESS:
+		// Check to see if you access struct fields propely
 		if (entry->role != ROLE_TYPE_STRACTURE)
 		{
 			fprintf(currentSemanticFile, "Error: line %d type %s is not structure! but trying to accesss field like a struct\n", current_token->lineNumber, entry->name);
@@ -1067,6 +1093,7 @@ SymbolTableEntry* Parse_KEY_(SymbolTableEntry* entry)
 	switch (current_token->kind)
 	{
 	case TOKEN_SEPARATION_BRACKETS_OPEN:
+		// Trying to see if you can access array propely
 		if (entry->role != ROLE_VARIABLE_ARRAY)
 		{
 			fprintf(currentSemanticFile, "Error: line %d, Trying to access KEY as array, but it's not an array!\n", current_token->lineNumber);
@@ -1145,6 +1172,7 @@ void Parse_CASE_LIST_(SymbolTableEntry *entry)
 	{
 	case TOKEN_KEYWORD_CASE:
 		temp = Parse_KEY_VALUE(entry);
+		// Checking types of KEY_VALUE same as switch var that you used
 		if (!CompareEntryTypes(entry, temp))
 		{
 			fprintf(currentSemanticFile, "Error: line %d KEY_VALUE is not the same type as KEY  \n", current_token->lineNumber);
@@ -1182,6 +1210,7 @@ void Parse_CASE(SymbolTableEntry* entry)
 	{
 	case TOKEN_KEYWORD_CASE:
 		temp = Parse_KEY_VALUE(entry);
+		// Checking types of KEY_VALUE same as switch var that you used
 		if (!CompareEntryTypes(entry, temp))
 		{
 			fprintf(currentSemanticFile, "Error: line %d KEY_VALUE is not the same type as KEY  \n", current_token->lineNumber);
@@ -1222,6 +1251,11 @@ SymbolTableEntry* Parse_KEY_VALUE(SymbolTableEntry *entry)
 		return temp;
 		break;
 	case TOKEN_IDENTIFIER:
+		// Checking types of KEY_VALUE intger or enum
+		if (entry == NULL)
+		{
+			return createErrorEntry();
+		}
 		if (entry->role != ROLE_TYPE_ENUM)
 		{
 			printf(currentSemanticFile, "Error: line %d, KEY must be either integer or enumeration type ", current_token->lineNumber);
@@ -1301,13 +1335,14 @@ SymbolTableEntry* Parse_FIELD_ACCESS_(SymbolTableEntry* entry)
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
+		// Make sure you access struct propley
 		if (entry != NULL && entry->role == ROLE_TYPE_STRACTURE)
 		{
 			sturctType = (StructType*)entry->role_value;
 			tempEntry = (SymbolTableEntry*)ht_get(sturctType->fields, current_token->lexeme);
 			if (tempEntry == NULL)
 			{
-				fprintf(currentSemanticFile, "Error: line %d, trying to access propety %s not exist on struct", current_token->lineNumber, current_token->lexeme);
+				fprintf(currentSemanticFile, "Error: line %d, trying to access propety %s not exist on struct \n", current_token->lineNumber, current_token->lexeme);
 			}
 			entry = tempEntry;
 		}
@@ -1389,9 +1424,10 @@ SymbolTableEntry* Parse_EXPRESSION(SymbolTableEntry* entry)
 		// Todo continue from Expression
 		type_simple_expression = Parse_SIMPLE_EXPRESSION(entry);
 		type_expression_ = Parse_EXPRESSION_(entry);
+		// Compare the Synthesized attribute that the math op are done on the types
 		if (CompareEntryTypes(type_expression_, type_simple_expression) == 0)
 		{
-			fprintf(yyout, "Error: line %d expression using multiple types, please only one type", current_token->lineNumber);
+			fprintf(yyout, "Error: line %d expression using multiple types, please only one type \n", current_token->lineNumber);
 			type_simple_expression = createErrorEntry();
 		}
 		return type_simple_expression;
@@ -1433,6 +1469,7 @@ SymbolTableEntry* Parse_EXPRESSION_(SymbolTableEntry* entry)
 	case TOKEN_OPERATION_MULTIPLICATION:
 	case TOKEN_OPERATION_DIVISION:
 		expressionEntry = Parse_EXPRESSION(entry);
+		// Compare that math op are done on the types
 		if (!(CompareEntryTypes(expressionEntry, entry) == 1 && (expressionEntry->role == ROLE_VARIABLE_SIMPLE_REAL || expressionEntry->role == ROLE_VARIABLE_SIMPLE_INTEGER)))
 		{
 			entry = createErrorEntry();
@@ -1480,6 +1517,7 @@ SymbolTableEntry* Parse_SIMPLE_EXPRESSION(SymbolTableEntry* entry)
 	switch (current_token->kind)
 	{
 	case TOKEN_IDENTIFIER:
+		// verify things done propely
 		enumId = current_token->lexeme;
 
 		temp = find_symboltable_variable(currentTable, enumId);
@@ -1489,7 +1527,10 @@ SymbolTableEntry* Parse_SIMPLE_EXPRESSION(SymbolTableEntry* entry)
 		}
 
 		entry = Parse_SIMPLE_EXPRESSION_(entry);
-
+		if (entry == NULL)
+		{
+			return NULL;
+		}
 		if (entry->role == ROLE_TYPE_ENUM)
 		{
 			enumType = (EnumType*)entry->role_value;
@@ -1556,10 +1597,12 @@ SymbolTableEntry* Parse_SIMPLE_EXPRESSION_(SymbolTableEntry* entry)
 	switch (current_token->kind)
 	{
 	case TOKEN_SEPARATION_BRACKETS_OPEN:
+		// Verify you access array propely
 		if (entry->role != ROLE_VARIABLE_ARRAY)
 		{
 			fprintf(currentSemanticFile, "Error: line %d trying to access id as an array \n", current_token->lineNumber);
 		}
+		// We excpect to fine intger type, so we passed integery as symbol entry
 		temp = Parse_EXPRESSION(createIntgerEntry());
 		if (temp->role != ROLE_VARIABLE_SIMPLE_INTEGER)
 		{

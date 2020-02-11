@@ -261,15 +261,23 @@ void parserErrorHandler(Token* current_token, eTOKENS* follow, int followSize)
 		}
 		fprintf(yyout, " at line : %d, Actual token of type %s, lexeme : %s . \n", current_token_saver->lineNumber, getTokenName(current_token_saver->kind), current_token_saver->lexeme);
 	}
-
-	if (hasError == FALSE)
+	if (!token)
+	{
+		return 1;
+	}
+	else
+	{
+		current_token = back_token();
+	}
+	/*
+	if (isPartOfFollow == FALSE)
 	{
 		token = back_token();
 	}
 	else
 	{
 		return 1;
-	}
+	}*/
 }
 
 char* getTokenName(eTOKENS token)
