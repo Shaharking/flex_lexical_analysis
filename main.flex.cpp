@@ -2066,7 +2066,7 @@ int main(int argc, char **argv )
 
     fclose(yyin);
     fclose(yyout);
-	
+
     yyout=fopen("C:\\temp\\test2_311402739_205669625_syntactic.txt","w");
 	semanticFile = fopen("C:\\temp\\test2_311402739_205669625_semantic.txt","w");
 

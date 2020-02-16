@@ -29,17 +29,17 @@ Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1514,9): war
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1510,20): warning C4101: 'simpleExpression': unreferenced local variable
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1594,9): warning C4033: 'Parse_SIMPLE_EXPRESSION_' must return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1596,17): warning C4566: character represented by universal-character-name '\u03F5' cannot be represented in the current code page (1252)
-Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(419): warning C4715: 'Parse_SIZE': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(392): warning C4715: 'Parse_VAR_DECLARATION_': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(419): warning C4715: 'Parse_SIZE': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(449): warning C4715: 'Parse_SIMPLE_TYPE': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1045): warning C4715: 'Parse_VAR_ELEMENT__': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1075): warning C4715: 'Parse_KEY': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1126): warning C4715: 'Parse_KEY_': not all control paths return a value
-Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1045): warning C4715: 'Parse_VAR_ELEMENT__': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1278): warning C4715: 'Parse_KEY_VALUE': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1358): warning C4715: 'Parse_FIELD_ACCESS_': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1395): warning C4715: 'Parse_FIELD_ACCESS__': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1441): warning C4715: 'Parse_EXPRESSION': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1486): warning C4715: 'Parse_EXPRESSION_': not all control paths return a value
 Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1569): warning C4715: 'Parse_SIMPLE_EXPRESSION': not all control paths return a value
-Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1633): warning C4715: 'Parse_SIMPLE_EXPRESSION_': not all control paths return a value
-Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1395): warning C4715: 'Parse_FIELD_ACCESS__': not all control paths return a value
+Z:\Development\Compilation\CompilerProject\CompilerProject\Parser.c(1638): warning C4715: 'Parse_SIMPLE_EXPRESSION_': not all control paths return a value
   CompilerProject.vcxproj -> Z:\Development\Compilation\CompilerProject\Debug\CompilerProject.exe

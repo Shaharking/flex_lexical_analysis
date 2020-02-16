@@ -1609,10 +1609,15 @@ SymbolTableEntry* Parse_SIMPLE_EXPRESSION_(SymbolTableEntry* entry)
 			fprintf(currentSemanticFile, "Error: line %d trying to access array with index that is not integer %s \n", current_token->lineNumber, temp->name);
 			entry = createErrorEntry();
 		}
-		else
+		else if(entry->role == ROLE_VARIABLE_ARRAY)
 		{
 			arrayVar = (ArrayVariable*)entry->role_value;
 			entry = arrayVar->type;
+		}
+		else
+		{
+			fprintf(currentSemanticFile, "Error: line %d trying to access field as array, but it is not an array \n", current_token->lineNumber);
+			entry = createErrorEntry();
 		}
 		match(TOKEN_SEPARATION_BRACKETS_CLOSE, follow, 8);
 		return entry;
